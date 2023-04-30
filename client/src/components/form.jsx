@@ -74,7 +74,6 @@ export const Form = ({ updateAccounts, showAlert }) => {
     localStorage.setItem("accounts", JSON.stringify(curentAccounts));
 
     showAlert();
-    hideAlert();
     updateAccounts();
   };
 
