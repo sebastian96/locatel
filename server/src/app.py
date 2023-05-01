@@ -20,16 +20,14 @@ with app.app_context():
 
     db = SQLAlchemy(app)
     ma = Marshmallow(app)
+    key = b'sAiAod9XzdX-se2IT4rmegR6RKafwcExuVjEeTf5DGY='
+    fernet = Fernet(key)
 
     @app.route("/api/create_account", methods=["POST"])
     def create_account():
         try:
             data = request.json
-            key = Fernet.generate_key()
-            fernet = Fernet(key)
-
             numbers = [str(random.randint(0, 9)) for _ in range(6)]
-
             account_number = ''.join(numbers)
             encript_account = fernet.encrypt(account_number.encode())
 
@@ -61,7 +59,7 @@ with app.app_context():
                     "id": new_account.id,
                     "user_name": new_user.name,
                     "account_number": account_number,
-                    "amount": new_account.total_amount
+                    "total_amount": new_account.total_amount
                 }
             })
 
@@ -132,6 +130,33 @@ with app.app_context():
             return jsonify({
                 "status": "success",
                 "total_amount": account.total_amount
+            })
+        except Exception as error:
+            return jsonify({
+                "status": "error",
+                "error":  f"{error}"
+            })
+
+    @app.route("/api/accounts", methods=["GET"])
+    def accounts():
+        try:
+            accounts = db.session.query(Account).all()
+            format_accounts = []
+
+            for account in accounts:
+                user = db.session.query(User).filter(
+                    User.account_id == account.id).first()
+
+                format_accounts.append({
+                    "id": account.id,
+                    "user_name": user.name,
+                    "account_number": fernet.decrypt(account.account_number).decode(),
+                    "total_amount": account.total_amount
+                })
+
+            return jsonify({
+                "status": "success",
+                "accounts": format_accounts
             })
         except Exception as error:
             return jsonify({
